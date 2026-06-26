@@ -14,7 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      flow_sessions: {
+        Row: {
+          ai_analysis_json: Json | null
+          completed_at: string | null
+          created_at: string
+          flow_template_id: string
+          id: string
+          responses_json: Json
+          status: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_analysis_json?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          flow_template_id: string
+          id?: string
+          responses_json?: Json
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_analysis_json?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          flow_template_id?: string
+          id?: string
+          responses_json?: Json
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_sessions_flow_template_id_fkey"
+            columns: ["flow_template_id"]
+            isOneToOne: false
+            referencedRelation: "flow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flow_templates: {
+        Row: {
+          ai_analysis_guidance: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          questions_json: Json
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          ai_analysis_guidance?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          questions_json: Json
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          ai_analysis_guidance?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          questions_json?: Json
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          faith_tradition: string | null
+          id: string
+          intention: string | null
+          preferred_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          faith_tradition?: string | null
+          id: string
+          intention?: string | null
+          preferred_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          faith_tradition?: string | null
+          id?: string
+          intention?: string | null
+          preferred_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
