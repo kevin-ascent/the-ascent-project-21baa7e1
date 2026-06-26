@@ -129,13 +129,14 @@ function FlowRunner() {
   async function saveAnswer(nextResponses: Record<string, string>) {
     if (!sessionId || !template) return;
     setSaving(true);
-    const payload: Record<string, unknown> = { responses_json: nextResponses };
-    // title from first answer
     const firstQ = template.questions_json[0];
-    if (firstQ && nextResponses[firstQ.id]) {
-      payload.title = nextResponses[firstQ.id].slice(0, 80);
-    }
-    await supabase.from("flow_sessions").update(payload).eq("id", sessionId);
+    const title = firstQ && nextResponses[firstQ.id]
+      ? nextResponses[firstQ.id].slice(0, 80)
+      : undefined;
+    await supabase
+      .from("flow_sessions")
+      .update({ responses_json: nextResponses, ...(title ? { title } : {}) })
+      .eq("id", sessionId);
     setSaving(false);
   }
 
