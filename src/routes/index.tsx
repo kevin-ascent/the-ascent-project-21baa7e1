@@ -50,7 +50,7 @@ function Header() {
           <a href="#ritual" className="transition-colors hover:text-foreground">Ritual</a>
         </nav>
         <a
-          href="#join"
+          href="/auth"
           className="rounded-full border border-border bg-card/40 px-4 py-2 text-sm backdrop-blur transition-colors hover:bg-card"
         >
           Begin
@@ -85,7 +85,7 @@ function Hero() {
         </p>
         <div className="mt-10 flex flex-wrap gap-4">
           <a
-            href="#join"
+            href="/auth"
             className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:-translate-y-0.5"
           >
             Start the climb
