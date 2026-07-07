@@ -73,8 +73,7 @@ function Hero() {
           className="w-64 md:w-80 h-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
         />
         <p className="mt-8 max-w-xl text-lg text-muted-foreground md:text-xl">
-          A quiet ritual for men climbing deliberately. Name your summit, take
-          the next honest step, and watch the horizon widen.
+          The Ascent. Climb higher, together.
         </p>
         <div className="mt-10 flex flex-wrap gap-4 justify-center">
           <a
