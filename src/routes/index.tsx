@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "A deliberate practice ritual for ambitious people. Set your summit, track the climb.",
+          "The Ascent is a deliberate practice ritual for ambitious people. Set your summit, track the climb, see the view.",
       },
     ],
   }),
