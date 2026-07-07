@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpRight, Mountain, Compass, Flag, Sunrise } from "lucide-react";
+import { ArrowUpRight, Mountain, Compass, Flag } from "lucide-react";
 import logoAsset from "@/assets/ascent-logo.png.asset.json";
 
 
@@ -77,9 +77,6 @@ function Hero() {
           height={420}
           className="w-64 md:w-80 h-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
         />
-        <p className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/30 px-3 py-1 text-xs uppercase tracking-[0.2em] text-muted-foreground backdrop-blur">
-          <Sunrise className="h-3 w-3 text-primary" /> Chapter I
-        </p>
         <p className="mt-8 max-w-xl text-lg text-muted-foreground md:text-xl">
           A quiet ritual for men climbing deliberately. Name your summit, take
           the next honest step, and watch the horizon widen.
