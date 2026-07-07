@@ -44,11 +44,8 @@ function Header() {
           <Mountain className="h-5 w-5 text-primary" strokeWidth={1.5} />
           <span>The Ascent</span>
         </a>
-        <nav className="hidden gap-8 text-sm text-muted-foreground md:flex">
-          <a href="#manifesto" className="transition-colors hover:text-foreground">Manifesto</a>
-          <a href="#pillars" className="transition-colors hover:text-foreground">Pillars</a>
-          <a href="#ritual" className="transition-colors hover:text-foreground">Ritual</a>
-        </nav>
+        <nav className="hidden gap-8 text-sm text-muted-foreground md:flex" />
+
         <a
           href="/auth"
           className="rounded-full border border-border bg-card/40 px-4 py-2 text-sm backdrop-blur transition-colors hover:bg-card"
@@ -91,13 +88,8 @@ function Hero() {
             Start the climb
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a>
-          <a
-            href="#manifesto"
-            className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm text-foreground/90 transition-colors hover:bg-card/50"
-          >
-            Read the manifesto
-          </a>
         </div>
+
       </div>
     </section>
   );
