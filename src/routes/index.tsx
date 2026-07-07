@@ -73,7 +73,7 @@ function Hero() {
           className="w-64 md:w-80 h-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
         />
         <p className="mt-8 max-w-xl text-lg text-muted-foreground md:text-xl">
-          The Ascent. Climb higher, together.
+          Climb higher, together. Every step upward with Scripture as your guide.
         </p>
         <div className="mt-10 flex flex-wrap gap-4 justify-center">
           <a
