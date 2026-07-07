@@ -17,9 +17,13 @@ create table if not exists public.profiles (
 grant select, insert, update, delete on public.profiles to authenticated;
 grant all on public.profiles to service_role;
 alter table public.profiles enable row level security;
+drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles for select to authenticated using (id = auth.uid());
+drop policy if exists "profiles_insert_own" on public.profiles;
 create policy "profiles_insert_own" on public.profiles for insert to authenticated with check (id = auth.uid());
+drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at before update on public.profiles for each row execute function public.set_updated_at();
 
 -- flow_templates
@@ -40,7 +44,9 @@ create table if not exists public.flow_templates (
 grant select on public.flow_templates to authenticated;
 grant all on public.flow_templates to service_role;
 alter table public.flow_templates enable row level security;
+drop policy if exists "flow_templates_select_active" on public.flow_templates;
 create policy "flow_templates_select_active" on public.flow_templates for select to authenticated using (is_active = true);
+drop trigger if exists set_flow_templates_updated_at on public.flow_templates;
 create trigger set_flow_templates_updated_at before update on public.flow_templates for each row execute function public.set_updated_at();
 
 -- flow_sessions
@@ -62,10 +68,15 @@ create index if not exists flow_sessions_user_id_idx on public.flow_sessions (us
 create index if not exists flow_sessions_status_idx on public.flow_sessions (status);
 create index if not exists flow_sessions_created_at_idx on public.flow_sessions (created_at desc);
 alter table public.flow_sessions enable row level security;
+drop policy if exists "flow_sessions_select_own" on public.flow_sessions;
 create policy "flow_sessions_select_own" on public.flow_sessions for select to authenticated using (user_id = auth.uid());
+drop policy if exists "flow_sessions_insert_own" on public.flow_sessions;
 create policy "flow_sessions_insert_own" on public.flow_sessions for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists "flow_sessions_update_own" on public.flow_sessions;
 create policy "flow_sessions_update_own" on public.flow_sessions for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists "flow_sessions_delete_own" on public.flow_sessions;
 create policy "flow_sessions_delete_own" on public.flow_sessions for delete to authenticated using (user_id = auth.uid());
+drop trigger if exists set_flow_sessions_updated_at on public.flow_sessions;
 create trigger set_flow_sessions_updated_at before update on public.flow_sessions for each row execute function public.set_updated_at();
 
 -- Seed flow templates

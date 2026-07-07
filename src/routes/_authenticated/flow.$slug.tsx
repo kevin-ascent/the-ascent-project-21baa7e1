@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Mountain, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
-import { analyzeFlow } from "@/lib/analyze-flow.functions";
 
 export const Route = createFileRoute("/_authenticated/flow/$slug")({
   head: () => ({ meta: [{ title: "Reflect — The Ascent" }] }),
@@ -39,7 +37,6 @@ function interpolate(prompt: string, responses: Record<string, string>) {
 function FlowRunner() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
-  const analyze = useServerFn(analyzeFlow);
 
   const [template, setTemplate] = useState<Template | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -117,7 +114,11 @@ function FlowRunner() {
   }, [template, responses]);
 
   if (loading || !template) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
   }
 
   const safeIndex = Math.min(index, visibleQuestions.length - 1);
@@ -130,9 +131,8 @@ function FlowRunner() {
     if (!sessionId || !template) return;
     setSaving(true);
     const firstQ = template.questions_json[0];
-    const title = firstQ && nextResponses[firstQ.id]
-      ? nextResponses[firstQ.id].slice(0, 80)
-      : undefined;
+    const title =
+      firstQ && nextResponses[firstQ.id] ? nextResponses[firstQ.id].slice(0, 80) : undefined;
     await supabase
       .from("flow_sessions")
       .update({ responses_json: nextResponses, ...(title ? { title } : {}) })
@@ -148,7 +148,10 @@ function FlowRunner() {
       if (!sessionId) return;
       setFinishing(true);
       try {
-        await analyze({ data: { sessionId } });
+        const { error } = await supabase.functions.invoke("analyze-flow", {
+          body: { sessionId },
+        });
+        if (error) throw error;
         navigate({ to: "/session/$id", params: { id: sessionId } });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Reflection failed");
@@ -181,7 +184,10 @@ function FlowRunner() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="px-6 py-5 flex items-center justify-between max-w-2xl mx-auto w-full">
-        <Link to="/home" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/home"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Home
         </Link>
         <span className="text-xs text-muted-foreground">
@@ -218,7 +224,9 @@ function FlowRunner() {
               >
                 <option value="">Choose…</option>
                 {q.options?.map((o) => (
-                  <option key={o} value={o}>{o}</option>
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
                 ))}
               </select>
             )}

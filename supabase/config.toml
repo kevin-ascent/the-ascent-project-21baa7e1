@@ -1,1 +1,4 @@
-project_id = "tciqeayrspgzqwgermms"
+project_id = "lwqtimaduzxpwxfrojqb"
+
+[functions.analyze-flow]
+verify_jwt = true
