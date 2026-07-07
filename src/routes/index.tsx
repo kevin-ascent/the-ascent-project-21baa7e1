@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpRight, Mountain, Compass, Flag } from "lucide-react";
+import { ArrowUpRight, Mountain } from "lucide-react";
 import logoAsset from "@/assets/ascent-logo.png.asset.json";
 
 
@@ -28,11 +28,6 @@ function Landing() {
     <div className="min-h-screen bg-background text-foreground">
       <Header />
       <Hero />
-      <Manifesto />
-      <Pillars />
-      <Ritual />
-      <CTA />
-      <Footer />
     </div>
   );
 }
