@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowUpRight, Mountain, Compass, Flag, Sunrise } from "lucide-react";
-import heroImg from "@/assets/ascent-hero.jpg";
+import logoAsset from "@/assets/ascent-logo.png.asset.json";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,28 +60,31 @@ function Header() {
 
 function Hero() {
   return (
-    <section className="relative isolate overflow-hidden">
-      <img
-        src={heroImg}
-        alt="Mountain silhouette at dawn"
-        width={1920}
-        height={1280}
-        className="absolute inset-0 h-full w-full object-cover opacity-70"
+    <section className="relative isolate overflow-hidden bg-[#1a1a1a]">
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "radial-gradient(ellipse at 50% 30%, rgba(224,92,44,0.25), transparent 60%)",
+        }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/60 to-background" />
-      <div className="relative mx-auto max-w-6xl px-6 pb-32 pt-44 md:pb-48 md:pt-56">
-        <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/30 px-3 py-1 text-xs uppercase tracking-[0.2em] text-muted-foreground backdrop-blur">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/30 to-background" />
+      <div className="relative mx-auto max-w-6xl px-6 pb-32 pt-32 md:pb-48 md:pt-40 flex flex-col items-center text-center">
+        <img
+          src={logoAsset.url}
+          alt="The Ascent — Men's Ministry, Life Church"
+          width={420}
+          height={420}
+          className="w-64 md:w-80 h-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+        />
+        <p className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/30 px-3 py-1 text-xs uppercase tracking-[0.2em] text-muted-foreground backdrop-blur">
           <Sunrise className="h-3 w-3 text-primary" /> Chapter I
         </p>
-        <h1 className="max-w-3xl text-5xl leading-[1.02] md:text-7xl">
-          Climb your own
-          <span className="block italic text-primary">mountain.</span>
-        </h1>
         <p className="mt-8 max-w-xl text-lg text-muted-foreground md:text-xl">
-          The Ascent is a quiet ritual for ambitious people. Name your summit, take
+          A quiet ritual for men climbing deliberately. Name your summit, take
           the next honest step, and watch the horizon widen.
         </p>
-        <div className="mt-10 flex flex-wrap gap-4">
+        <div className="mt-10 flex flex-wrap gap-4 justify-center">
           <a
             href="/auth"
             className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:-translate-y-0.5"
@@ -89,11 +93,11 @@ function Hero() {
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a>
         </div>
-
       </div>
     </section>
   );
 }
+
 
 function Manifesto() {
   return (
