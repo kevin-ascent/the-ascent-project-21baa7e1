@@ -26,10 +26,13 @@ const ANALYSIS_SCHEMA = {
     scripture_connection: {
       type: "object",
       additionalProperties: false,
-      required: ["reference", "text", "why_it_fits"],
+      required: ["reference", "why_it_fits"],
       properties: {
-        reference: { type: "string" },
-        text: { type: "string" },
+        reference: {
+          type: "string",
+          description:
+            "A single Bible passage reference like 'Book Chapter:Verse' or 'Book Chapter:Verse-Verse'. Keep it to 1-4 verses. Use standard book names (Psalm, John, Romans, 1 Corinthians).",
+        },
         why_it_fits: { type: "string" },
       },
     },
