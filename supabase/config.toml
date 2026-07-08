@@ -2,3 +2,6 @@ project_id = "tciqeayrspgzqwgermms"
 
 [functions.analyze-flow]
 verify_jwt = true
+
+[functions.fetch-verse]
+verify_jwt = true

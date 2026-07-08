@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mountain, ArrowLeft } from "lucide-react";
+import { Mountain, ArrowLeft, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/flow/$slug")({
@@ -45,6 +45,16 @@ function FlowRunner() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [phase, setPhase] = useState<"questions" | "verse">("questions");
+  const [verse, setVerse] = useState<{
+    reference: string;
+    text: string;
+    translation: string;
+  } | null>(null);
+  const [verseLoading, setVerseLoading] = useState(false);
+  const [verseError, setVerseError] = useState<string | null>(null);
+
+  const showsVerseStep = slug === "prayer" || slug === "bible";
 
   useEffect(() => {
     (async () => {
@@ -140,22 +150,51 @@ function FlowRunner() {
     setSaving(false);
   }
 
+  async function runAnalyze() {
+    if (!sessionId) return;
+    setFinishing(true);
+    try {
+      const { error } = await supabase.functions.invoke("analyze-flow", {
+        body: { sessionId },
+      });
+      if (error) throw error;
+      navigate({ to: "/session/$id", params: { id: sessionId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Reflection failed");
+      setFinishing(false);
+    }
+  }
+
+  async function loadVerse() {
+    if (!sessionId) return;
+    setVerseLoading(true);
+    setVerseError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("fetch-verse", {
+        body: { sessionId },
+      });
+      if (error) throw error;
+      if (!data || typeof data !== "object" || !("text" in data)) {
+        throw new Error("No verse returned");
+      }
+      setVerse(data as { reference: string; text: string; translation: string });
+    } catch (err) {
+      setVerseError(err instanceof Error ? err.message : "Could not load verse");
+    } finally {
+      setVerseLoading(false);
+    }
+  }
+
   async function handleContinue() {
     const next = { ...responses, [q.id]: value };
     setResponses(next);
     await saveAnswer(next);
     if (isLast) {
-      if (!sessionId) return;
-      setFinishing(true);
-      try {
-        const { error } = await supabase.functions.invoke("analyze-flow", {
-          body: { sessionId },
-        });
-        if (error) throw error;
-        navigate({ to: "/session/$id", params: { id: sessionId } });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Reflection failed");
-        setFinishing(false);
+      if (showsVerseStep) {
+        setPhase("verse");
+        void loadVerse();
+      } else {
+        await runAnalyze();
       }
     } else {
       setIndex(safeIndex + 1);
@@ -177,6 +216,74 @@ function FlowRunner() {
       </div>
     );
   }
+
+  if (phase === "verse") {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <header className="px-6 py-5 flex items-center justify-between max-w-2xl mx-auto w-full">
+          <button
+            onClick={() => setPhase("questions")}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+          <span className="text-xs text-muted-foreground">
+            {template.icon} {template.name} · A verse for you
+          </span>
+        </header>
+
+        <main className="flex-1 flex items-center px-6 py-12 max-w-2xl mx-auto w-full">
+          <div className="w-full">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <BookOpen className="h-4 w-4" />
+              <span>A verse chosen for what you wrote</span>
+            </div>
+
+            {verseLoading && (
+              <p className="mt-8 font-display text-2xl animate-pulse">
+                Finding a verse for you…
+              </p>
+            )}
+
+            {verseError && !verseLoading && (
+              <div className="mt-8">
+                <p className="font-display text-xl">We couldn't load a verse right now.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{verseError}</p>
+                <Button className="mt-6" onClick={() => void loadVerse()}>
+                  Try again
+                </Button>
+              </div>
+            )}
+
+            {verse && !verseLoading && (
+              <>
+                <blockquote className="mt-8 font-display text-2xl md:text-3xl leading-snug whitespace-pre-line">
+                  {verse.text}
+                </blockquote>
+                <p className="mt-6 text-sm text-muted-foreground">
+                  {verse.reference} · {verse.translation}
+                </p>
+              </>
+            )}
+
+            <div className="mt-10 flex items-center justify-between">
+              <Button variant="ghost" onClick={() => setPhase("questions")}>
+                Back
+              </Button>
+              <Button
+                onClick={() => void runAnalyze()}
+                disabled={verseLoading || !verse}
+              >
+                Finish & reflect
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+
 
   const prompt = interpolate(q.prompt, responses);
   const progress = ((safeIndex + 1) / visibleQuestions.length) * 100;
