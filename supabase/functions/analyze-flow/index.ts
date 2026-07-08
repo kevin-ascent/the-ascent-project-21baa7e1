@@ -77,6 +77,45 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
+    .replace(/<span[^>]*class="vn"[^>]*>(\d+)<\/span>/gi, " $1 ")
+    .replace(/<\/(p|h\d|div|li|br)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#8217;|&rsquo;/g, "\u2019")
+    .replace(/&#8216;|&lsquo;/g, "\u2018")
+    .replace(/&#8220;|&ldquo;/g, "\u201C")
+    .replace(/&#8221;|&rdquo;/g, "\u201D")
+    .replace(/&#8212;|&mdash;/g, "\u2014")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{2,}/g, "\n\n")
+    .replace(/^\s+|\s+$/g, "");
+}
+
+async function fetchVerseText(reference: string): Promise<string | null> {
+  const nltKey = Deno.env.get("NLT_API_KEY");
+  if (!nltKey) return null;
+  try {
+    const url = `https://api.nlt.to/api/passages?ref=${encodeURIComponent(reference)}&version=NLT&key=${encodeURIComponent(nltKey)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("NLT fetch failed", res.status, await res.text());
+      return null;
+    }
+    const html = await res.text();
+    const text = stripHtml(html);
+    return text || null;
+  } catch (err) {
+    console.error("NLT fetch error", err);
+    return null;
+  }
+}
+
 function getSupabaseConfig() {
   const url = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
