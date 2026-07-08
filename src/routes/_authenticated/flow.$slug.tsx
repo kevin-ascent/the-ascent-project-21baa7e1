@@ -45,6 +45,16 @@ function FlowRunner() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [phase, setPhase] = useState<"questions" | "verse">("questions");
+  const [verse, setVerse] = useState<{
+    reference: string;
+    text: string;
+    translation: string;
+  } | null>(null);
+  const [verseLoading, setVerseLoading] = useState(false);
+  const [verseError, setVerseError] = useState<string | null>(null);
+
+  const showsVerseStep = slug === "prayer" || slug === "bible";
 
   useEffect(() => {
     (async () => {
