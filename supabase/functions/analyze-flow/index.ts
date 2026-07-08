@@ -176,7 +176,26 @@ serve(async (req) => {
     }
 
     if (session.status === "completed" && session.ai_analysis_json) {
-      return jsonResponse(session.ai_analysis_json);
+      const existing = session.ai_analysis_json as {
+        scripture_connection?: { reference?: string; text?: string; why_it_fits?: string };
+        [k: string]: unknown;
+      };
+      const esc = existing.scripture_connection;
+      if (esc?.reference && !esc.text) {
+        const verseText = await fetchVerseText(esc.reference);
+        if (verseText) {
+          existing.scripture_connection = {
+            reference: esc.reference,
+            text: verseText,
+            why_it_fits: esc.why_it_fits ?? "",
+          };
+          await supabase
+            .from("flow_sessions")
+            .update({ ai_analysis_json: existing })
+            .eq("id", session.id);
+        }
+      }
+      return jsonResponse(existing);
     }
 
     const [{ data: template }, { data: profile }] = await Promise.all([

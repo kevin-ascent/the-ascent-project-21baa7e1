@@ -48,8 +48,20 @@ function SessionResults() {
         navigate({ to: "/home" });
         return;
       }
-      setSession(data as unknown as SessionRow);
+      const row = data as unknown as SessionRow;
+      setSession(row);
       setLoading(false);
+
+      // Backfill missing scripture verse text for older sessions.
+      const sc = row.ai_analysis_json?.scripture_connection;
+      if (sc?.reference && !sc.text) {
+        const { data: refreshed } = await supabase.functions.invoke("analyze-flow", {
+          body: { sessionId: id },
+        });
+        if (refreshed && typeof refreshed === "object" && "scripture_connection" in refreshed) {
+          setSession({ ...row, ai_analysis_json: refreshed as Analysis });
+        }
+      }
     })();
   }, [id, navigate]);
 
