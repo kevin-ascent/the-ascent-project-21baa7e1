@@ -150,22 +150,51 @@ function FlowRunner() {
     setSaving(false);
   }
 
+  async function runAnalyze() {
+    if (!sessionId) return;
+    setFinishing(true);
+    try {
+      const { error } = await supabase.functions.invoke("analyze-flow", {
+        body: { sessionId },
+      });
+      if (error) throw error;
+      navigate({ to: "/session/$id", params: { id: sessionId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Reflection failed");
+      setFinishing(false);
+    }
+  }
+
+  async function loadVerse() {
+    if (!sessionId) return;
+    setVerseLoading(true);
+    setVerseError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("fetch-verse", {
+        body: { sessionId },
+      });
+      if (error) throw error;
+      if (!data || typeof data !== "object" || !("text" in data)) {
+        throw new Error("No verse returned");
+      }
+      setVerse(data as { reference: string; text: string; translation: string });
+    } catch (err) {
+      setVerseError(err instanceof Error ? err.message : "Could not load verse");
+    } finally {
+      setVerseLoading(false);
+    }
+  }
+
   async function handleContinue() {
     const next = { ...responses, [q.id]: value };
     setResponses(next);
     await saveAnswer(next);
     if (isLast) {
-      if (!sessionId) return;
-      setFinishing(true);
-      try {
-        const { error } = await supabase.functions.invoke("analyze-flow", {
-          body: { sessionId },
-        });
-        if (error) throw error;
-        navigate({ to: "/session/$id", params: { id: sessionId } });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Reflection failed");
-        setFinishing(false);
+      if (showsVerseStep) {
+        setPhase("verse");
+        void loadVerse();
+      } else {
+        await runAnalyze();
       }
     } else {
       setIndex(safeIndex + 1);
