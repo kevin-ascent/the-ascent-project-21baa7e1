@@ -264,7 +264,23 @@ serve(async (req) => {
       }
     }
 
-    const finalAnalysis = analysis ?? FALLBACK;
+    const finalAnalysis = (analysis ?? FALLBACK) as {
+      scripture_connection?: { reference?: string; text?: string; why_it_fits?: string };
+      [k: string]: unknown;
+    };
+
+    // Ensure scripture_connection has real verse text from NLT (Claude only picks the reference).
+    const sc = finalAnalysis.scripture_connection;
+    if (sc?.reference && !sc.text) {
+      const verseText = await fetchVerseText(sc.reference);
+      if (verseText) {
+        finalAnalysis.scripture_connection = {
+          reference: sc.reference,
+          text: verseText,
+          why_it_fits: sc.why_it_fits ?? "",
+        };
+      }
+    }
     const { error: updateError } = await supabase
       .from("flow_sessions")
       .update({
