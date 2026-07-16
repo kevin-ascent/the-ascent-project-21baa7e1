@@ -1,12 +1,10 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
 const ANALYSIS_SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -41,7 +39,6 @@ const ANALYSIS_SCHEMA = {
     suggested_action: { type: "string" },
   },
 };
-
 const FALLBACK = {
   headline: "Thank you for showing up.",
   affirmation:
@@ -57,16 +54,14 @@ const FALLBACK = {
   reflective_question: "What did writing this surface that you weren't expecting?",
   suggested_action: "Re-read your own answers slowly once before moving on with your day.",
 };
-
 type Question = {
   id: string;
   prompt: string;
 };
-
 type AnthropicResponse = {
   content: Array<{ type: string; input?: unknown; text?: string }>;
 };
-
+type ScriptureConnection = { reference: string; text?: string; why_it_fits: string };
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -76,7 +71,6 @@ function jsonResponse(body: unknown, status = 200) {
     },
   });
 }
-
 function stripHtml(html: string): string {
   return html
     .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
@@ -87,16 +81,15 @@ function stripHtml(html: string): string {
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
-    .replace(/&#8217;|&rsquo;/g, "\u2019")
-    .replace(/&#8216;|&lsquo;/g, "\u2018")
-    .replace(/&#8220;|&ldquo;/g, "\u201C")
-    .replace(/&#8221;|&rdquo;/g, "\u201D")
-    .replace(/&#8212;|&mdash;/g, "\u2014")
+    .replace(/&#8217;|&rsquo;/g, "’")
+    .replace(/&#8216;|&lsquo;/g, "‘")
+    .replace(/&#8220;|&ldquo;/g, "“")
+    .replace(/&#8221;|&rdquo;/g, "”")
+    .replace(/&#8212;|&mdash;/g, "—")
     .replace(/[ \t]+/g, " ")
     .replace(/\n{2,}/g, "\n\n")
     .replace(/^\s+|\s+$/g, "");
 }
-
 async function fetchVerseText(reference: string): Promise<string | null> {
   const nltKey = Deno.env.get("NLT_API_KEY");
   if (!nltKey) return null;
@@ -115,38 +108,100 @@ async function fetchVerseText(reference: string): Promise<string | null> {
     return null;
   }
 }
+// Best-effort scan for a Bible reference (e.g. "Romans 5:8", "1 Corinthians 13:4-7",
+// "Song of Solomon 2:16") anywhere inside a string. Used to salvage a reference from
+// garbled model output like `\n<parameter name="reference">Romans 5:8`.
+function extractBibleReference(input: string): string | null {
+  const match = input.match(
+    /\b((?:[1-3]\s)?[A-Z][a-z]+(?:\s(?:of\s)?[A-Z][a-z]+)*)\s+(\d{1,3}(?::\d{1,3}(?:[-–]\d{1,3})?)?)\b/
+  );
+  if (!match) return null;
+  return `${match[1].trim()} ${match[2].trim()}`;
+}
+// Anthropic's tool_choice makes a tool call likely, but it does NOT guarantee the
+// input matches ANALYSIS_SCHEMA. Occasionally scripture_connection comes back as a
+// raw/garbled string (or an object missing "reference") instead of a proper object.
+// This coerces whatever we got into a usable shape, or returns null if nothing in it
+// looks like a real Bible reference.
+function coerceScriptureConnection(raw: unknown): ScriptureConnection | null {
+  if (raw == null) return null;
 
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    const obj = raw as Record<string, unknown>;
+    const whyItFits = typeof obj.why_it_fits === "string" ? obj.why_it_fits : "";
+    if (typeof obj.reference === "string" && obj.reference.trim()) {
+      return {
+        reference: obj.reference.trim(),
+        text: typeof obj.text === "string" && obj.text.trim() ? obj.text : undefined,
+        why_it_fits: whyItFits,
+      };
+    }
+    // Right shape (object), but "reference" itself is missing or garbled somewhere inside it.
+    const ref = extractBibleReference(JSON.stringify(obj));
+    return ref ? { reference: ref, why_it_fits: whyItFits } : null;
+  }
+
+  if (typeof raw === "string") {
+    const ref = extractBibleReference(raw);
+    return ref ? { reference: ref, why_it_fits: "" } : null;
+  }
+
+  return null;
+}
+function isWellFormed(raw: unknown): raw is ScriptureConnection {
+  return (
+    typeof raw === "object" &&
+    raw !== null &&
+    !Array.isArray(raw) &&
+    typeof (raw as Record<string, unknown>).reference === "string" &&
+    (raw as Record<string, unknown>).reference.toString().trim().length > 0
+  );
+}
+// Guarantees scripture_connection is a well-formed object with real NLT verse text,
+// repairing malformed AI output (string, partial object, missing text) where needed.
+// Returns whether anything actually changed so callers know whether to persist the fix.
+async function repairScriptureConnection(
+  raw: unknown
+): Promise<{ fixed: ScriptureConnection; changed: boolean }> {
+  const wasMalformed = !isWellFormed(raw);
+  const coerced = coerceScriptureConnection(raw);
+  const base: ScriptureConnection = coerced ?? { ...FALLBACK.scripture_connection };
+
+  let textFetched = false;
+  if (!base.text) {
+    const verseText = await fetchVerseText(base.reference);
+    if (verseText) {
+      base.text = verseText;
+      textFetched = true;
+    }
+  }
+
+  return { fixed: base, changed: wasMalformed || textFetched };
+}
 function getSupabaseConfig() {
   const url = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
-
   if (!url || !anonKey) {
     throw new Error("Missing Supabase function environment variables.");
   }
-
   return { url, anonKey };
 }
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
-
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
-
     const { sessionId } = (await req.json()) as { sessionId?: string };
     if (!sessionId) {
       return jsonResponse({ error: "Missing sessionId" }, 400);
     }
-
     const { url, anonKey } = getSupabaseConfig();
     const supabase = createClient(url, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -155,49 +210,36 @@ serve(async (req) => {
         autoRefreshToken: false,
       },
     });
-
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData.user) {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
-
     const { data: session, error: sessionError } = await supabase
       .from("flow_sessions")
       .select("id,user_id,responses_json,status,ai_analysis_json,flow_template_id")
       .eq("id", sessionId)
       .maybeSingle();
-
     if (sessionError || !session) {
       return jsonResponse({ error: "Session not found" }, 404);
     }
-
     if (session.user_id !== userData.user.id) {
       return jsonResponse({ error: "Forbidden" }, 403);
     }
-
     if (session.status === "completed" && session.ai_analysis_json) {
       const existing = session.ai_analysis_json as {
-        scripture_connection?: { reference?: string; text?: string; why_it_fits?: string };
+        scripture_connection?: unknown;
         [k: string]: unknown;
       };
-      const esc = existing.scripture_connection;
-      if (esc?.reference && !esc.text) {
-        const verseText = await fetchVerseText(esc.reference);
-        if (verseText) {
-          existing.scripture_connection = {
-            reference: esc.reference,
-            text: verseText,
-            why_it_fits: esc.why_it_fits ?? "",
-          };
-          await supabase
-            .from("flow_sessions")
-            .update({ ai_analysis_json: existing })
-            .eq("id", session.id);
-        }
+      const { fixed, changed } = await repairScriptureConnection(existing.scripture_connection);
+      existing.scripture_connection = fixed;
+      if (changed) {
+        await supabase
+          .from("flow_sessions")
+          .update({ ai_analysis_json: existing })
+          .eq("id", session.id);
       }
       return jsonResponse(existing);
     }
-
     const [{ data: template }, { data: profile }] = await Promise.all([
       supabase
         .from("flow_templates")
@@ -210,7 +252,6 @@ serve(async (req) => {
         .eq("id", userData.user.id)
         .maybeSingle(),
     ]);
-
     const questions = (template?.questions_json ?? []) as Question[];
     const responses = (session.responses_json ?? {}) as Record<string, string>;
     const qaText = questions
@@ -221,7 +262,6 @@ serve(async (req) => {
       })
       .filter(Boolean)
       .join("\n\n");
-
     const systemPrompt = [
       `You are a warm, grounded spiritual companion responding to a ${template?.name ?? "reflection"}.`,
       "Speak directly to the person. Be honest, never saccharine. Avoid cliche.",
@@ -233,10 +273,8 @@ serve(async (req) => {
     ]
       .filter(Boolean)
       .join("\n");
-
     const userPrompt = `Here is what they wrote, in order:\n\n${qaText}\n\nWrite the reflection now as the JSON object.`;
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-
     let analysis: unknown = null;
     if (!apiKey) {
       console.error("ANTHROPIC_API_KEY missing");
@@ -264,7 +302,6 @@ serve(async (req) => {
             tool_choice: { type: "tool", name: "return_reflection" },
           }),
         });
-
         if (!anthropicResponse.ok) {
           const errorText = await anthropicResponse.text();
           console.error("Anthropic error", anthropicResponse.status, errorText);
@@ -282,24 +319,15 @@ serve(async (req) => {
         console.error("Analyze failure:", error);
       }
     }
-
     const finalAnalysis = (analysis ?? FALLBACK) as {
-      scripture_connection?: { reference?: string; text?: string; why_it_fits?: string };
+      scripture_connection?: unknown;
       [k: string]: unknown;
     };
-
-    // Ensure scripture_connection has real verse text from NLT (Claude only picks the reference).
-    const sc = finalAnalysis.scripture_connection;
-    if (sc?.reference && !sc.text) {
-      const verseText = await fetchVerseText(sc.reference);
-      if (verseText) {
-        finalAnalysis.scripture_connection = {
-          reference: sc.reference,
-          text: verseText,
-          why_it_fits: sc.why_it_fits ?? "",
-        };
-      }
-    }
+    // Ensure scripture_connection is well-formed and has real verse text from NLT.
+    // Claude only picks the reference, and its output isn't schema-guaranteed, so we
+    // always run it through the same repair path used for older stored sessions.
+    const { fixed } = await repairScriptureConnection(finalAnalysis.scripture_connection);
+    finalAnalysis.scripture_connection = fixed;
     const { error: updateError } = await supabase
       .from("flow_sessions")
       .update({
@@ -308,12 +336,10 @@ serve(async (req) => {
         completed_at: new Date().toISOString(),
       })
       .eq("id", session.id);
-
     if (updateError) {
       console.error("Could not save analysis", updateError);
       return jsonResponse({ error: "Could not save analysis" }, 500);
     }
-
     return jsonResponse(finalAnalysis);
   } catch (error) {
     console.error(error);
