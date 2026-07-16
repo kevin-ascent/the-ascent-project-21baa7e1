@@ -57,15 +57,17 @@ function Header() {
 
 function Hero() {
   return (
-    <section className="relative isolate overflow-hidden bg-[#1a1a1a]">
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage:
-            "radial-gradient(ellipse at 50% 30%, rgba(224,92,44,0.25), transparent 60%)",
-        }}
+    <section className="relative isolate overflow-hidden">
+      <img
+        src={sunsetMountainsAsset.url}
+        alt="Sunset mountain landscape"
+        width={1920}
+        height={1080}
+        className="absolute inset-0 h-full w-full object-cover object-center"
+        priority="true"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/30 to-background" />
+      <div className="absolute inset-0 bg-background/40" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/20 to-background" />
       <div className="relative mx-auto max-w-6xl px-6 pb-32 pt-32 md:pb-48 md:pt-40 flex flex-col items-center text-center">
         <img
           src={logoAsset.url}
@@ -74,7 +76,7 @@ function Hero() {
           height={420}
           className="w-64 md:w-80 h-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
         />
-        <p className="mt-8 max-w-xl text-lg text-muted-foreground md:text-xl">
+        <p className="mt-8 max-w-xl text-lg text-summit md:text-xl drop-shadow-md">
           Climb higher, together.{" "}
           <br />
           Every step upward with Scripture as your guide.
@@ -82,7 +84,7 @@ function Hero() {
         <div className="mt-10 flex flex-wrap gap-4 justify-center">
           <a
             href="/auth"
-            className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:-translate-y-0.5"
+            className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-transform hover:-translate-y-0.5 shadow-lg"
           >
             Start the climb
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -92,4 +94,5 @@ function Hero() {
     </section>
   );
 }
+
 
