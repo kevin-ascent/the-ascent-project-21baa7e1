@@ -20,7 +20,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,6 +44,13 @@ function AuthPage() {
         if (error) throw error;
         toast.success("Account created. Welcome.");
         navigate({ to: "/onboarding" });
+      } else if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Check your email for a reset link.");
+        setMode("signin");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -56,6 +63,8 @@ function AuthPage() {
     }
   }
 
+  const isForgot = mode === "forgot";
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="px-6 py-5">
@@ -66,12 +75,14 @@ function AuthPage() {
       <main className="flex-1 flex items-center justify-center px-6 pb-16">
         <div className="w-full max-w-sm">
           <h1 className="font-display text-4xl tracking-tight">
-            {mode === "signin" ? "Welcome back" : "Begin the climb"}
+            {mode === "signin" ? "Welcome back" : mode === "signup" ? "Begin the climb" : "Reset your password"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {mode === "signin"
               ? "Sign in to continue your reflection."
-              : "Create an account to start your practice."}
+              : mode === "signup"
+                ? "Create an account to start your practice."
+                : "Enter your email and we'll send you a reset link."}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -86,20 +97,39 @@ function AuthPage() {
                 autoComplete="email"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              />
-            </div>
+            {!isForgot && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  {mode === "signin" && (
+                    <button
+                      type="button"
+                      onClick={() => setMode("forgot")}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                />
+              </div>
+            )}
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "..." : mode === "signin" ? "Sign in" : "Create account"}
+              {loading
+                ? "..."
+                : mode === "signin"
+                  ? "Sign in"
+                  : mode === "signup"
+                    ? "Create account"
+                    : "Send reset link"}
             </Button>
           </form>
 
@@ -108,10 +138,15 @@ function AuthPage() {
             onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
             className="mt-6 text-sm text-muted-foreground hover:text-foreground"
           >
-            {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
+            {mode === "signin"
+              ? "Need an account? Sign up"
+              : mode === "signup"
+                ? "Already have an account? Sign in"
+                : "Back to sign in"}
           </button>
         </div>
       </main>
     </div>
   );
 }
+
