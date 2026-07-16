@@ -57,7 +57,7 @@ function Header() {
 
 function Hero() {
   return (
-    <section className="relative isolate overflow-hidden">
+    <section className="relative isolate flex min-h-screen items-center overflow-hidden">
       <img
         src={sunsetMountainsAsset.url}
         alt="Sunset mountain landscape"
@@ -68,7 +68,8 @@ function Hero() {
 
       <div className="absolute inset-0 bg-background/40" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/20 to-background" />
-      <div className="relative mx-auto max-w-6xl px-6 pb-32 pt-32 md:pb-48 md:pt-40 flex flex-col items-center text-center">
+      <div className="relative mx-auto max-w-6xl px-6 py-32 md:py-40 flex flex-col items-center text-center">
+
         <img
           src={logoAsset.url}
           alt="The Ascent — Men's Ministry, Life Church"
