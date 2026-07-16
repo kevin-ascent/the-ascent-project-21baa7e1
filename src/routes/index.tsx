@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowUpRight, Mountain } from "lucide-react";
 import logoAsset from "@/assets/ascent-logo.png.asset.json";
+import sunsetMountainsAsset from "@/assets/sunset-mountains.jpg.asset.json";
+
 
 
 export const Route = createFileRoute("/")({
