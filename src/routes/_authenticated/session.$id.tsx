@@ -4,22 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mountain, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-
 export const Route = createFileRoute("/_authenticated/session/$id")({
   head: () => ({ meta: [{ title: "Reflection — The Ascent" }] }),
   component: SessionResults,
 });
-
+type ScriptureConnection = { reference: string; text: string; why_it_fits: string };
 type Analysis = {
   headline: string;
   affirmation: string;
   insight: string;
-  scripture_connection: { reference: string; text: string; why_it_fits: string };
+  // Not guaranteed to already be well-formed — the AI's tool call can come back
+  // malformed. Always check with isValidScriptureConnection() before rendering.
+  scripture_connection: unknown;
   themes: string[];
   reflective_question: string;
   suggested_action: string;
 };
-
 type SessionRow = {
   id: string;
   title: string | null;
@@ -29,13 +29,23 @@ type SessionRow = {
   completed_at: string | null;
   flow_templates: { name: string; icon: string | null; questions_json: { id: string; prompt: string }[] } | null;
 };
-
+// The AI's scripture pick isn't schema-guaranteed to come back as a clean object —
+// it can arrive as a raw/garbled string (e.g. a broken tool-call fragment) or as an
+// object missing "text". This is the one place we trust that it's actually usable.
+function isValidScriptureConnection(sc: unknown): sc is ScriptureConnection {
+  return (
+    !!sc &&
+    typeof sc === "object" &&
+    typeof (sc as Record<string, unknown>).reference === "string" &&
+    typeof (sc as Record<string, unknown>).text === "string" &&
+    (sc as Record<string, unknown>).text.toString().trim().length > 0
+  );
+}
 function SessionResults() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [session, setSession] = useState<SessionRow | null>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
@@ -51,10 +61,12 @@ function SessionResults() {
       const row = data as unknown as SessionRow;
       setSession(row);
       setLoading(false);
-
-      // Backfill missing scripture verse text for older sessions.
+      // Backfill missing/malformed scripture verse data for older sessions.
+      // (Previously this only fired when scripture_connection was a well-formed
+      // object missing "text" — a raw/garbled string silently skipped this check
+      // and never got repaired. Now anything that isn't valid triggers a repair call.)
       const sc = row.ai_analysis_json?.scripture_connection;
-      if (sc?.reference && !sc.text) {
+      if (row.ai_analysis_json && !isValidScriptureConnection(sc)) {
         const { data: refreshed } = await supabase.functions.invoke("analyze-flow", {
           body: { sessionId: id },
         });
@@ -64,14 +76,12 @@ function SessionResults() {
       }
     })();
   }, [id, navigate]);
-
   if (loading || !session) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
   }
-
   const a = session.ai_analysis_json;
   const questions = session.flow_templates?.questions_json ?? [];
-
+  const scripture = a?.scripture_connection;
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="px-6 py-5 flex items-center justify-between max-w-2xl mx-auto">
@@ -82,7 +92,6 @@ function SessionResults() {
           {session.flow_templates?.icon} {session.flow_templates?.name}
         </span>
       </header>
-
       <main className="max-w-2xl mx-auto px-6 pb-20">
         {a ? (
           <article className="space-y-8">
@@ -90,23 +99,19 @@ function SessionResults() {
               <Sparkles className="h-4 w-4" /> A reflection for you
             </div>
             <h1 className="font-display text-3xl md:text-4xl leading-tight tracking-tight">{a.headline}</h1>
-
             <p className="text-lg leading-relaxed text-foreground/90 italic">{a.affirmation}</p>
-
             <section>
               <h2 className="text-xs uppercase tracking-wider text-muted-foreground">Insight</h2>
               <p className="mt-2 text-base leading-relaxed">{a.insight}</p>
             </section>
-
-            {a.scripture_connection && (
+            {isValidScriptureConnection(scripture) && (
               <section className="rounded-lg border border-primary/30 bg-primary/5 p-5">
                 <h2 className="text-xs uppercase tracking-wider text-primary">Scripture</h2>
-                <p className="mt-2 font-display text-lg italic leading-relaxed">"{a.scripture_connection.text}"</p>
-                <p className="mt-2 text-sm text-muted-foreground">— {a.scripture_connection.reference}</p>
-                <p className="mt-3 text-sm leading-relaxed">{a.scripture_connection.why_it_fits}</p>
+                <p className="mt-2 font-display text-lg italic leading-relaxed">"{scripture.text}"</p>
+                <p className="mt-2 text-sm text-muted-foreground">— {scripture.reference}</p>
+                <p className="mt-3 text-sm leading-relaxed">{scripture.why_it_fits}</p>
               </section>
             )}
-
             {a.themes?.length > 0 && (
               <section>
                 <h2 className="text-xs uppercase tracking-wider text-muted-foreground">Themes</h2>
@@ -117,17 +122,14 @@ function SessionResults() {
                 </div>
               </section>
             )}
-
             <section>
               <h2 className="text-xs uppercase tracking-wider text-muted-foreground">Sit with this</h2>
               <p className="mt-2 font-display text-xl leading-snug">{a.reflective_question}</p>
             </section>
-
             <section>
               <h2 className="text-xs uppercase tracking-wider text-muted-foreground">One step</h2>
               <p className="mt-2 text-base leading-relaxed">{a.suggested_action}</p>
             </section>
-
             <div className="flex gap-3 pt-6">
               <Button asChild variant="outline">
                 <Link to="/home">Back to home</Link>
@@ -143,7 +145,6 @@ function SessionResults() {
             <p className="mt-4">This reflection hasn't been analyzed yet.</p>
           </div>
         )}
-
         <details className="mt-12 border-t border-border pt-6">
           <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
             View your answers
