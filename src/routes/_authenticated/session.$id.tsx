@@ -33,12 +33,13 @@ type SessionRow = {
 // it can arrive as a raw/garbled string (e.g. a broken tool-call fragment) or as an
 // object missing "text". This is the one place we trust that it's actually usable.
 function isValidScriptureConnection(sc: unknown): sc is ScriptureConnection {
+  const text = (sc as Record<string, unknown>).text;
   return (
     !!sc &&
     typeof sc === "object" &&
     typeof (sc as Record<string, unknown>).reference === "string" &&
-    typeof (sc as Record<string, unknown>).text === "string" &&
-    (sc as Record<string, unknown>).text.toString().trim().length > 0
+    typeof text === "string" &&
+    text.trim().length > 0
   );
 }
 function SessionResults() {

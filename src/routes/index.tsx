@@ -8,18 +8,25 @@ import sunsetMountainsAsset from "@/assets/sunset-mountains.jpg.asset.json";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "The Ascent — Climb your own mountain" },
+      { title: "The Ascent — Men's Ministry, Life Church" },
       {
         name: "description",
         content:
-          "The Ascent is a deliberate practice ritual for ambitious people. Set your summit, track the climb, see the view.",
+          "Climb higher, together. Every step upward with Scripture as your guide.",
       },
-      { property: "og:title", content: "The Ascent — Climb your own mountain" },
+      { property: "og:title", content: "The Ascent — Men's Ministry, Life Church" },
       {
         property: "og:description",
         content:
-          "The Ascent is a deliberate practice ritual for ambitious people. Set your summit, track the climb, see the view.",
+          "Climb higher, together. Every step upward with Scripture as your guide.",
       },
+      { property: "og:image", content: "https://lifechurchascent.org/og-image.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "The Ascent — sunset mountain landscape with ministry logo" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://lifechurchascent.org/og-image.jpg" },
     ],
   }),
   component: Landing,
