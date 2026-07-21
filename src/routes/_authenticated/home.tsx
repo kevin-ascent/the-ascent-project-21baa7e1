@@ -137,7 +137,7 @@ function Home() {
               params={{ slug: t.slug }}
               className="group rounded-lg border border-border bg-card p-6 hover:border-primary/60 transition"
             >
-              <div className="text-3xl">{t.icon}</div>
+              <FlowIcon name={t.icon} className="h-8 w-8 text-primary" />
               <h2 className="mt-4 font-display text-2xl">{t.name}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{t.description}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-sm text-primary group-hover:gap-2 transition-all">
