@@ -1,6 +1,6 @@
-import { icons, Sparkles, type LucideProps } from "lucide-react";
+import { icons, Sparkles } from "lucide-react";
+import type { ComponentProps } from "react";
 
-// Convert "heart" or "book-open" to "Heart" / "BookOpen" for lucide-react lookup
 function toPascal(name: string): string {
   return name
     .split(/[-_\s]+/)
@@ -9,10 +9,9 @@ function toPascal(name: string): string {
     .join("");
 }
 
-export function FlowIcon({
-  name,
-  ...props
-}: { name: string | null | undefined } & LucideProps) {
+type Props = { name: string | null | undefined } & ComponentProps<typeof Sparkles>;
+
+export function FlowIcon({ name, ...props }: Props) {
   if (!name) return <Sparkles {...props} />;
   const key = toPascal(name) as keyof typeof icons;
   const Icon = icons[key] ?? Sparkles;
