@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Mountain, LogOut, ArrowRight } from "lucide-react";
+import { FlowIcon } from "@/lib/flow-icon";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Home — The Ascent" }] }),
