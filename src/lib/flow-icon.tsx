@@ -9,7 +9,7 @@ function toPascal(name: string): string {
     .join("");
 }
 
-type Props = { name: string | null | undefined } & ComponentProps<typeof Sparkles>;
+type Props = { name: string | null | undefined } & Omit<ComponentProps<typeof Sparkles>, "name">;
 
 export function FlowIcon({ name, ...props }: Props) {
   if (!name) return <Sparkles {...props} />;
