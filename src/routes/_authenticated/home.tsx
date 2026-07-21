@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Mountain, LogOut, ArrowRight } from "lucide-react";
+import { FlowIcon } from "@/lib/flow-icon";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Home — The Ascent" }] }),
@@ -117,7 +118,8 @@ function Home() {
                   className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-secondary transition"
                 >
                   <span className="text-sm">
-                    <span className="mr-2">{s.flow_templates?.icon}</span>
+                    <FlowIcon name={s.flow_templates?.icon} className="mr-2 inline h-4 w-4" />
+
                     {s.title || s.flow_templates?.name}
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -135,7 +137,7 @@ function Home() {
               params={{ slug: t.slug }}
               className="group rounded-lg border border-border bg-card p-6 hover:border-primary/60 transition"
             >
-              <div className="text-3xl">{t.icon}</div>
+              <FlowIcon name={t.icon} className="h-8 w-8 text-primary" />
               <h2 className="mt-4 font-display text-2xl">{t.name}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{t.description}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-sm text-primary group-hover:gap-2 transition-all">
