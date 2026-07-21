@@ -42,7 +42,12 @@ function Home() {
 
       const [profileRes, tplRes, sessRes] = await Promise.all([
         supabase.from("profiles").select("preferred_name").eq("id", userData.user.id).maybeSingle(),
-        supabase.from("flow_templates").select("id,slug,name,description,icon,color").eq("is_active", true).order("display_order"),
+        supabase
+          .from("flow_templates")
+          .select("id,slug,name,description,icon,color,display_order")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true })
+          .order("name", { ascending: true }),
         supabase
           .from("flow_sessions")
           .select("id,title,status,updated_at,completed_at,flow_template_id,flow_templates(name,icon,slug)")
@@ -50,12 +55,14 @@ function Home() {
           .limit(20),
       ]);
 
+      if (tplRes.error) console.error("[home] flow_templates fetch error", tplRes.error);
+
       if (!profileRes.data?.preferred_name) {
         navigate({ to: "/onboarding" });
         return;
       }
       setName(profileRes.data.preferred_name);
-      setTemplates(tplRes.data ?? []);
+      setTemplates((tplRes.data ?? []) as Template[]);
       setSessions((sessRes.data ?? []) as Session[]);
       setLoading(false);
     })();
