@@ -118,7 +118,8 @@ function Home() {
                   className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-secondary transition"
                 >
                   <span className="text-sm">
-                    <span className="mr-2">{s.flow_templates?.icon}</span>
+                    <FlowIcon name={s.flow_templates?.icon} className="mr-2 inline h-4 w-4" />
+
                     {s.title || s.flow_templates?.name}
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
