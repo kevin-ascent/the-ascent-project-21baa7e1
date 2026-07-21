@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/external-supabase";
 import { Button } from "@/components/ui/button";
 import { Mountain, LogOut, ArrowRight } from "lucide-react";
 
@@ -55,7 +55,15 @@ function Home() {
           .limit(20),
       ]);
 
-      if (tplRes.error) console.error("[home] flow_templates fetch error", tplRes.error);
+      if (tplRes.error) {
+        console.error("[home] flow_templates fetch error", tplRes.error);
+      } else {
+        console.log(
+          "[home] flow_templates fetched",
+          (tplRes.data ?? []).length,
+          (tplRes.data ?? []).map((template) => template.slug),
+        );
+      }
 
       if (!profileRes.data?.preferred_name) {
         navigate({ to: "/onboarding" });
